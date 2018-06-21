@@ -1,20 +1,39 @@
 package com.padcmyanmar.fun5.helloworld.data.vos;
 
+import com.google.gson.annotations.SerializedName;
+
+import java.util.ArrayList;
 import java.util.List;
 
 /**
  * Created by Phyo Thiha on 6/9/18.
  */
 public class NewsVO {
-
+    @SerializedName("news-id")
     private String newId;
+
+    @SerializedName("brief")
     private String brief;
+
+    @SerializedName("details")
     private String details;
+
+    @SerializedName("images")
     private List<String> images;
+
+    @SerializedName("posted-date")
     private String postedDate;
+
+    @SerializedName("publication")
     private PublicationVO publication;
+
+    @SerializedName("favorites")
     private List<FavouriteVO> favourite;
+
+    @SerializedName("comments")
     private List<CommentVO> comments;
+
+    @SerializedName("sent-tos")
     private List<SentToVO> sentTos;
 
 
@@ -31,6 +50,9 @@ public class NewsVO {
     }
 
     public List<String> getImages() {
+        if(images==null){
+            return new ArrayList<>();
+        }
         return images;
     }
 

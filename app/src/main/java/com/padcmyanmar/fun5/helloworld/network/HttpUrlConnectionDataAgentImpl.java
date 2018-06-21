@@ -3,10 +3,15 @@ package com.padcmyanmar.fun5.helloworld.network;
 import android.os.AsyncTask;
 import android.util.Log;
 
+import com.google.gson.Gson;
+import com.padcmyanmar.fun5.helloworld.events.ApiErrorEvent;
+import com.padcmyanmar.fun5.helloworld.events.SuccessGetNewsEvent;
+import com.padcmyanmar.fun5.helloworld.network.response.GetNewsResponse;
 import com.padcmyanmar.fun5.helloworld.utils.MMNewsConstants;
 
 import org.apache.http.NameValuePair;
 import org.apache.http.message.BasicNameValuePair;
+import org.greenrobot.eventbus.EventBus;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -115,8 +120,19 @@ public class HttpUrlConnectionDataAgentImpl implements NewsDataAgent {
             }
 
             @Override
-            protected void onPostExecute(String s) {
-                super.onPostExecute(s);
+            protected void onPostExecute(String responseString) {
+                super.onPostExecute(responseString);
+                Gson gson=new Gson();
+                GetNewsResponse newsResponse=gson.fromJson(responseString, GetNewsResponse.class);
+                //Log.d("onPostExecute","News List Size:"+newsResponse.getMmNews().size());
+
+                if(newsResponse.isRsponseOK()){
+                    SuccessGetNewsEvent event=new SuccessGetNewsEvent(newsResponse.getMmNews());
+                    EventBus.getDefault().post(event);
+                }else{
+                    ApiErrorEvent errorEvent=new ApiErrorEvent(newsResponse.getMessage());
+                    EventBus.getDefault().post(errorEvent);
+                }
             }
 
         }.execute();

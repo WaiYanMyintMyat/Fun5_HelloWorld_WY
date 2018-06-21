@@ -1,4 +1,4 @@
-<resources>
+<resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
     <string name="app_name">Fun5-HelloWorld</string>
     <string name="action_settings">Settings</string>
     <string name="str_privacy"><![CDATA[Terms & Privacy Policy]]></string>
@@ -40,5 +40,8 @@
         <item>တာမွေ</item>
 
     </string-array>
+
+    <!--dynamic data xliff-->
+    <string name="format_posted_date">Posted At : <xliff:g id="posted_date">%1$s</xliff:g></string>
 
 </resources>
