@@ -43,117 +43,126 @@ public class HttpUrlConnectionDataAgentImpl implements NewsDataAgent {
 
     @Override
     public void loadNewsList(final int page, final String accessToken) {
+        NetworkCallTask networkCallTask=new NetworkCallTask(accessToken,page);//don't pass ui component ...to avoid memory leaked
+        networkCallTask.execute();
+    }
 
-        new AsyncTask<Void, Void, String>() {
+    //static inner class to avoid memory leaked......
+    private static class NetworkCallTask extends AsyncTask<Void,Void,String>{
 
-            @Override
-            protected String doInBackground(Void... voids) {
-                URL url;
-                BufferedReader reader = null;
-                StringBuilder stringBuilder;
+        private String mAccessToken;
+        private int mPage;
 
-                try {
-                    // create the HttpURLConnection
-                    //http://www.aungpyaephyo.xyz/myanmar_attractions/getAttractionsList.php
-                    url = new URL(MMNewsConstants.API_BASE + MMNewsConstants.GET_NEWS); //1.
-                    HttpURLConnection connection = (HttpURLConnection) url.openConnection(); //2.
+        public NetworkCallTask(String accessToken, int page) {
+            this.mAccessToken = accessToken;
+            this.mPage = page;
+        }
 
-                    // just want to do an HTTP POST here
-                    connection.setRequestMethod("POST"); //3.
+        @Override
+        protected String doInBackground(Void... voids) {
+            URL url;
+            BufferedReader reader = null;
+            StringBuilder stringBuilder;
 
-                    // uncomment this if you want to write output to this url
-                    //connection.setDoOutput(true);
+            try {
+                // create the HttpURLConnection
+                //http://www.aungpyaephyo.xyz/myanmar_attractions/getAttractionsList.php
+                url = new URL(MMNewsConstants.API_BASE + MMNewsConstants.GET_NEWS); //1.
+                HttpURLConnection connection = (HttpURLConnection) url.openConnection(); //2.
 
-                    // give it 15 seconds to respond
-                    connection.setReadTimeout(15 * 1000); //4. ms
+                // just want to do an HTTP POST here
+                connection.setRequestMethod("POST"); //3.
 
-                    connection.setDoInput(true); //5.
-                    connection.setDoOutput(true);
+                // uncomment this if you want to write output to this url
+                //connection.setDoOutput(true);
 
-                    //put the request parameter into NameValuePair list.
-                    List<NameValuePair> params = new ArrayList<>(); //6.
-                    params.add(new BasicNameValuePair(MMNewsConstants.PARAM_ACCESS_TOKEN,accessToken));
-                    params.add(new BasicNameValuePair(MMNewsConstants.PARAM_PAGE,String.valueOf(page)));
+                // give it 15 seconds to respond
+                connection.setReadTimeout(15 * 1000); //4. ms
 
-                    //write the parameters from NameValuePair list into connection obj.
-                    OutputStream outputStream = connection.getOutputStream();
-                    BufferedWriter writer = new BufferedWriter(
-                            new OutputStreamWriter(outputStream, "UTF-8"));
-                    writer.write(getQuery(params));
-                    writer.flush();
-                    writer.close();
-                    outputStream.close();
+                connection.setDoInput(true); //5.
+                connection.setDoOutput(true);
 
-                    connection.connect(); //7.
+                //put the request parameter into NameValuePair list.
+                List<NameValuePair> params = new ArrayList<>(); //6.
+                params.add(new BasicNameValuePair(MMNewsConstants.PARAM_ACCESS_TOKEN,mAccessToken));
+                params.add(new BasicNameValuePair(MMNewsConstants.PARAM_PAGE,String.valueOf(mPage)));
 
-                    // read the output from the server
-                    reader = new BufferedReader(new InputStreamReader(connection.getInputStream())); //8.
-                    stringBuilder = new StringBuilder();
+                //write the parameters from NameValuePair list into connection obj.
+                OutputStream outputStream = connection.getOutputStream();
+                BufferedWriter writer = new BufferedWriter(
+                        new OutputStreamWriter(outputStream, "UTF-8"));
+                writer.write(getQuery(params));
+                writer.flush();
+                writer.close();
+                outputStream.close();
 
-                    String line = null;
-                    while ((line = reader.readLine()) != null) {
-                        stringBuilder.append(line + "\n");
-                    }
+                connection.connect(); //7.
 
-                    String responseString = stringBuilder.toString(); //9.
+                // read the output from the server
+                reader = new BufferedReader(new InputStreamReader(connection.getInputStream())); //8.
+                stringBuilder = new StringBuilder();
+
+                String line = null;
+                while ((line = reader.readLine()) != null) {
+                    stringBuilder.append(line + "\n");
+                }
+
+                String responseString = stringBuilder.toString(); //9.
 //                    AttractionListResponse response = CommonInstances.getGsonInstance().fromJson(responseString, AttractionListResponse.class);
 //                    List<AttractionVO> attractionList = response.getAttractionList();
 
-                    return responseString;
+                return responseString;
 
-                } catch (Exception e) {
-                    Log.e("error", e.getMessage());
-                    //AttractionModel.getInstance().notifyErrorInLoadingAttractions(e.getMessage());
-                } finally {
-                    // close the reader; this can throw an exception too, so
-                    // wrap it in another try/catch block.
-                    if (reader != null) {
-                        try {
-                            reader.close();
-                        } catch (IOException ioe) {
-                            ioe.printStackTrace();
-                        }
+            } catch (Exception e) {
+                Log.e("error", e.getMessage());
+                //AttractionModel.getInstance().notifyErrorInLoadingAttractions(e.getMessage());
+            } finally {
+                // close the reader; this can throw an exception too, so
+                // wrap it in another try/catch block.
+                if (reader != null) {
+                    try {
+                        reader.close();
+                    } catch (IOException ioe) {
+                        ioe.printStackTrace();
                     }
                 }
-
-                return null;
             }
 
-            @Override
-            protected void onPostExecute(String responseString) {
-                super.onPostExecute(responseString);
-                Gson gson=new Gson();
-                GetNewsResponse newsResponse=gson.fromJson(responseString, GetNewsResponse.class);
-                //Log.d("onPostExecute","News List Size:"+newsResponse.getMmNews().size());
-
-                if(newsResponse.isRsponseOK()){
-                    SuccessGetNewsEvent event=new SuccessGetNewsEvent(newsResponse.getMmNews());
-                    EventBus.getDefault().post(event);
-                }else{
-                    ApiErrorEvent errorEvent=new ApiErrorEvent(newsResponse.getMessage());
-                    EventBus.getDefault().post(errorEvent);
-                }
-            }
-
-        }.execute();
-
-    }
-
-    private String getQuery(List<NameValuePair> params) throws UnsupportedEncodingException {
-        StringBuilder result = new StringBuilder();
-        boolean first = true;
-
-        for (NameValuePair pair : params) {
-            if (first)
-                first = false;
-            else
-                result.append("&");
-
-            result.append(URLEncoder.encode(pair.getName(), "UTF-8"));
-            result.append("=");
-            result.append(URLEncoder.encode(pair.getValue(), "UTF-8"));
+            return null;
         }
 
-        return result.toString();
+        @Override
+        protected void onPostExecute(String responseString) {
+            super.onPostExecute(responseString);
+            Gson gson=new Gson();
+            GetNewsResponse newsResponse=gson.fromJson(responseString, GetNewsResponse.class);
+            //Log.d("onPostExecute","News List Size:"+newsResponse.getMmNews().size());
+
+            if(newsResponse.isRsponseOK()){
+                SuccessGetNewsEvent event=new SuccessGetNewsEvent(newsResponse.getMmNews());
+                EventBus.getDefault().post(event);
+            }else{
+                ApiErrorEvent errorEvent=new ApiErrorEvent(newsResponse.getMessage());
+                EventBus.getDefault().post(errorEvent);
+            }
+        }
+
+        private String getQuery(List<NameValuePair> params) throws UnsupportedEncodingException {
+            StringBuilder result = new StringBuilder();
+            boolean first = true;
+
+            for (NameValuePair pair : params) {
+                if (first)
+                    first = false;
+                else
+                    result.append("&");
+
+                result.append(URLEncoder.encode(pair.getName(), "UTF-8"));
+                result.append("=");
+                result.append(URLEncoder.encode(pair.getValue(), "UTF-8"));
+            }
+
+            return result.toString();
+        }
     }
 }

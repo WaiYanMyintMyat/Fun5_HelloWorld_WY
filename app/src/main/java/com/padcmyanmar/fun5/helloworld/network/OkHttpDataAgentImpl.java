@@ -23,7 +23,7 @@ import okhttp3.Response;
 
 public class OkHttpDataAgentImpl implements NewsDataAgent {
     private static OkHttpDataAgentImpl objInstance;
-    private OkHttpClient mHttpClient;
+    private static OkHttpClient mHttpClient;
 
     private OkHttpDataAgentImpl() {
         mHttpClient = new OkHttpClient.Builder() //1.
@@ -42,57 +42,66 @@ public class OkHttpDataAgentImpl implements NewsDataAgent {
 
     @Override
     public void loadNewsList(final int page, final String accessToken) {
-        new AsyncTask<Void, Void, String>() {
+        NetworkCallTask networkCallTask=new NetworkCallTask(accessToken,page);//don't pass ui component .....to avoid memory leaked
+        networkCallTask.execute();
+    }
 
-            @Override
-            protected String doInBackground(Void... voids) {
-                RequestBody formBody = new FormBody.Builder() //2.
-                        .add(MMNewsConstants.PARAM_ACCESS_TOKEN, accessToken)
-                        .add(MMNewsConstants.PARAM_PAGE, String.valueOf(page))
-                        .build();
+    //static inner class is to avoid memory leaked...
+    private static class NetworkCallTask extends AsyncTask<Void,Void,String>{
 
-                Request request = new Request.Builder() //3
-                        .url(MMNewsConstants.API_BASE + MMNewsConstants.GET_NEWS)
-                        .post(formBody)
-                        .build();
+        private String maccessToken;
+        private int mPage;
 
-                try {
-                    Response response = mHttpClient.newCall(request).execute(); //4.
-                    if (response.isSuccessful()) {
-                        String responseString = response.body().string();
+        public NetworkCallTask(String accessToken, int page) {
+            maccessToken = accessToken;
+            mPage = page;
+        }
+
+        @Override
+        protected String doInBackground(Void... voids) {
+            RequestBody formBody = new FormBody.Builder() //2.
+                    .add(MMNewsConstants.PARAM_ACCESS_TOKEN, maccessToken)
+                    .add(MMNewsConstants.PARAM_PAGE, String.valueOf(mPage))
+                    .build();
+
+            Request request = new Request.Builder() //3
+                    .url(MMNewsConstants.API_BASE + MMNewsConstants.GET_NEWS)
+                    .post(formBody)
+                    .build();
+
+            try {
+                Response response = mHttpClient.newCall(request).execute(); //4.
+                if (response.isSuccessful()) {
+                    String responseString = response.body().string();
 //                        AttractionListResponse responseAttractionList = CommonInstances.getGsonInstance().fromJson(responseString, AttractionListResponse.class);
 //                        List<AttractionVO> attractionList = responseAttractionList.getAttractionList();
-                        return responseString;
-                    } else {
-                        //AttractionModel.getInstance().notifyErrorInLoadingAttractions(response.message());
-                    }
-                } catch (IOException e) {
-                    Log.e("error", e.getMessage());
-                    //AttractionModel.getInstance().notifyErrorInLoadingAttractions(e.getMessage());
+                    return responseString;
+                } else {
+                    //AttractionModel.getInstance().notifyErrorInLoadingAttractions(response.message());
                 }
-
-                return null;
+            } catch (IOException e) {
+                Log.e("error", e.getMessage());
+                //AttractionModel.getInstance().notifyErrorInLoadingAttractions(e.getMessage());
             }
 
-            @Override
-            protected void onPostExecute(String responseString) {
-                super.onPostExecute(responseString);
-//                if (attractionList != null && attractionList.size() > 0) {
-//                    AttractionModel.getInstance().notifyAttractionsLoaded(attractionList);
-//                }
+            return null;
+        }
 
-                Gson gson=new Gson();
-                GetNewsResponse newsResponse=gson.fromJson(responseString, GetNewsResponse.class);
-                //Log.d("onPostExecute","News List Size:"+newsResponse.getMmNews().size());
+        @Override
+        protected void onPostExecute(String responseString) {
+            super.onPostExecute(responseString);
 
-                if(newsResponse.isRsponseOK()){
-                    SuccessGetNewsEvent event=new SuccessGetNewsEvent(newsResponse.getMmNews());
-                    EventBus.getDefault().post(event);
-                }else{
-                    ApiErrorEvent errorEvent=new ApiErrorEvent(newsResponse.getMessage());
-                    EventBus.getDefault().post(errorEvent);
-                }
+            Gson gson=new Gson();
+            GetNewsResponse newsResponse=gson.fromJson(responseString, GetNewsResponse.class);
+            //Log.d("onPostExecute","News List Size:"+newsResponse.getMmNews().size());
+
+            if(newsResponse.isRsponseOK()){
+                SuccessGetNewsEvent event=new SuccessGetNewsEvent(newsResponse.getMmNews());
+                EventBus.getDefault().post(event);
+            }else{
+                ApiErrorEvent errorEvent=new ApiErrorEvent(newsResponse.getMessage());
+                EventBus.getDefault().post(errorEvent);
             }
-        }.execute();
+        }
     }
 }

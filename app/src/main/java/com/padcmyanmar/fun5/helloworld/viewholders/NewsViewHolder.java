@@ -7,6 +7,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.bumptech.glide.Glide;
+import com.bumptech.glide.request.RequestOptions;
 import com.padcmyanmar.fun5.helloworld.R;
 import com.padcmyanmar.fun5.helloworld.data.vos.NewsVO;
 import com.padcmyanmar.fun5.helloworld.delegates.NewsDelegate;
@@ -60,9 +61,10 @@ public class NewsViewHolder extends RecyclerView.ViewHolder {
 
         GlideApp.with(ivPublisherImage.getContext())
                 .load(mNews.getPublication().getLogo())
-                .fitCenter()
-                .placeholder(R.drawable.img_publication_logo_placeholder)
-                .error(R.drawable.img_publication_logo_placeholder)
+                .apply(RequestOptions
+                        .circleCropTransform()
+                        .placeholder(R.drawable.news_placeholder)
+                        .error(R.drawable.news_error))
                 .into(ivPublisherImage);
 
         tvPublicationTitle.setText(mNews.getPublication().getTitle());
@@ -73,9 +75,8 @@ public class NewsViewHolder extends RecyclerView.ViewHolder {
         if(!mNews.getImages().isEmpty()){
             GlideApp.with(ivNewsHero.getContext())
                     .load(mNews.getImages().get(0))
-                    .fitCenter()
                     .placeholder(R.drawable.news_placeholder)
-                    .error(R.drawable.news_placeholder)
+                    .error(R.drawable.news_error)
                     .into(ivNewsHero);
         }else{
             ivNewsHero.setVisibility(View.GONE);
