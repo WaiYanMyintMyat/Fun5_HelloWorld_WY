@@ -1,6 +1,7 @@
 package com.padcmyanmar.fun5.helloworld.network;
 
 import com.padcmyanmar.fun5.helloworld.events.ApiErrorEvent;
+import com.padcmyanmar.fun5.helloworld.events.SuccessForceRefreshGetNewsEvent;
 import com.padcmyanmar.fun5.helloworld.events.SuccessGetNewsEvent;
 import com.padcmyanmar.fun5.helloworld.network.response.GetNewsResponse;
 import com.padcmyanmar.fun5.helloworld.utils.MMNewsConstants;
@@ -45,15 +46,20 @@ public class RetrofitDataAgentImpl implements NewsDataAgent {
     }
 
     @Override
-    public void loadNewsList(int page, String accessToken) {
+    public void loadNewsList(int page, String accessToken,final boolean isForceRefresh) {
         Call<GetNewsResponse> loadNewsCall = mTheApi.loadNewsList(accessToken, page);
         loadNewsCall.enqueue(new Callback<GetNewsResponse>() {
             @Override
             public void onResponse(Call<GetNewsResponse> call, Response<GetNewsResponse> response) {
                 GetNewsResponse newsResponse = response.body();
                 if (newsResponse != null && newsResponse.isRsponseOK()) {
-                    SuccessGetNewsEvent event = new SuccessGetNewsEvent(newsResponse.getMmNews());
-                    EventBus.getDefault().post(event);
+                    if(isForceRefresh){
+                        SuccessForceRefreshGetNewsEvent event=new SuccessForceRefreshGetNewsEvent(newsResponse.getMmNews());
+                        EventBus.getDefault().post(event);
+                    }else{
+                        SuccessGetNewsEvent event = new SuccessGetNewsEvent(newsResponse.getMmNews());
+                        EventBus.getDefault().post(event);
+                    }
                 } else {
                     if (newsResponse == null) {
                         ApiErrorEvent errorEvent = new ApiErrorEvent("Empty Response in network call.");

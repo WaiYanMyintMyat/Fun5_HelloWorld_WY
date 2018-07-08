@@ -41,7 +41,10 @@
 
     </string-array>
 
+    <string name="empty_msg">လက္ရိွအခ်ိန္မွာ သတင္းေတြမျပေပးႏိုင္ေသးတာစိတ္မရိွပါနဲ႔</string>
+    <string name="empty_msg_news_detail">news detail no data</string>
     <!--dynamic data xliff-->
     <string name="format_posted_date">Posted At : <xliff:g id="posted_date">%1$s</xliff:g></string>
+
 
 </resources>

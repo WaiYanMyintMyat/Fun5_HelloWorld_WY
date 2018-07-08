@@ -41,10 +41,16 @@ public class OkHttpDataAgentImpl implements NewsDataAgent {
     }
 
     @Override
-    public void loadNewsList(final int page, final String accessToken) {
+    public void loadNewsList(int page, String accessToken, boolean isForceRefresh) {
         NetworkCallTask networkCallTask=new NetworkCallTask(accessToken,page);//don't pass ui component .....to avoid memory leaked
         networkCallTask.execute();
     }
+
+//    @Override
+//    public void loadNewsList(final int page, final String accessToken) {
+//        NetworkCallTask networkCallTask=new NetworkCallTask(accessToken,page);//don't pass ui component .....to avoid memory leaked
+//        networkCallTask.execute();
+//    }
 
     //static inner class is to avoid memory leaked...
     private static class NetworkCallTask extends AsyncTask<Void,Void,String>{

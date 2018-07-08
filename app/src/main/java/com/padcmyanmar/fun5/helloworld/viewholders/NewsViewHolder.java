@@ -21,7 +21,7 @@ import butterknife.ButterKnife;
  * Created by Phyo Thiha on 5/27/18.
  */
 
-public class NewsViewHolder extends RecyclerView.ViewHolder {
+public class NewsViewHolder extends BaseNewsViewHolder {
 
     private NewsDelegate mNewsDelegate;
     private NewsVO mNews;
@@ -55,7 +55,9 @@ public class NewsViewHolder extends RecyclerView.ViewHolder {
         });
     }
 
-    public void setNewsData(NewsVO news){
+    @Override
+    public void bindData(NewsVO news) {
+        super.bindData(news);
         mNews=news;
         tvNewsBrief.setText(news.getBrief());
 
@@ -73,6 +75,7 @@ public class NewsViewHolder extends RecyclerView.ViewHolder {
                 .getResources().getString(R.string.format_posted_date,mNews.getPostedDate()));
 
         if(!mNews.getImages().isEmpty()){
+            ivNewsHero.setVisibility(View.VISIBLE);
             GlideApp.with(ivNewsHero.getContext())
                     .load(mNews.getImages().get(0))
                     .placeholder(R.drawable.news_placeholder)
